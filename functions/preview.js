@@ -12,7 +12,7 @@ export async function onRequest(context) {
         return new Response('Missing slug parameter', { status: 400 });
     }
 
-    const apiUrl = `https://website.chayenu.org/${slugParam}?includeDraft=true`;
+    const apiUrl = `https://chayenu.org/${slugParam}?includeDraft=true`;
 
     try {
         const apiResponse = await fetch(apiUrl, {
