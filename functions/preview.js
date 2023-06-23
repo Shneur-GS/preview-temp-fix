@@ -1,3 +1,4 @@
+// your-worker.js
 export async function onRequest(context) {
     const request = context.request;
 
@@ -9,26 +10,33 @@ export async function onRequest(context) {
     const slugParam = url.searchParams.get('slug');
 
     if (!slugParam) {
-        return new Response('Missing slug parameter', { status: 400 });
+        return new Response('Missing slug', { status: 400 });
     }
 
-    const apiUrl = `https://chayenu.org/${slugParam}?includeDraft=true`;
-
     try {
-        const apiResponse = await fetch(apiUrl, {
-            method: request.method,
-            headers: request.headers
+        const apiUrl = `https://website.chayenu.org/preview?slug=${slugParam}&includeDraft=true`;
+        const apiRes = await fetch(apiUrl);
+        let htmlData = await apiRes.text();
+
+        // Create a DOM Parser
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(htmlData, "text/html");
+
+        // Get all img elements
+        let imgs = doc.querySelectorAll("img");
+        imgs.forEach(img => {
+            // Replace src attribute to point to chayenu.org domain
+            let src = img.getAttribute("src");
+            if (src && !src.startsWith('http')) {
+                img.setAttribute("src", `https://chayenu.org${src}`);
+            }
         });
 
-        // Copy the response so that it's no longer tied to the original fetch call
-        const response = new Response(apiResponse.body, apiResponse);
+        // Serialize the modified HTML back to string
+        let serializer = new XMLSerializer();
+        htmlData = serializer.serializeToString(doc);
 
-        // Alter the headers so that it's as if the response came directly from your domain
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        response.headers.set('Host', new URL(request.url).host);
-
-        return response;
-
+        return new Response(htmlData, { headers: apiRes.headers });
     } catch (error) {
         return new Response('Error calling API', { status: 500 });
     }
