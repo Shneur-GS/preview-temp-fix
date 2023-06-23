@@ -1,44 +1,35 @@
-// your-worker.js
 export async function onRequest(context) {
     const request = context.request;
-
+  
     if (request.method !== 'GET') {
         return new Response(`Method ${request.method} Not Allowed`, { status: 405 });
     }
-
+  
     const url = new URL(request.url);
-    const slugParam = url.searchParams.get('slug');
+    const slug = url.searchParams.get('slug');
 
-    if (!slugParam) {
+    if (!slug) {
         return new Response('Missing slug', { status: 400 });
     }
 
+    const websiteUrl = `https://website.chayenu.org/${slug}?includeDraft=true`;
     try {
-        const apiUrl = `https://website.chayenu.org/preview?slug=${slugParam}&includeDraft=true`;
-        const apiRes = await fetch(apiUrl);
-        let htmlData = await apiRes.text();
+        const websiteRes = await fetch(websiteUrl);
+        const websiteHtml = await websiteRes.text();
 
-        // Create a DOM Parser
-        let parser = new DOMParser();
-        let doc = parser.parseFromString(htmlData, "text/html");
-
-        // Get all img elements
-        let imgs = doc.querySelectorAll("img");
-        imgs.forEach(img => {
-            // Replace src attribute to point to chayenu.org domain
-            let src = img.getAttribute("src");
-            if (src && !src.startsWith('http')) {
-                img.setAttribute("src", `https://chayenu.org${src}`);
-            }
-        });
-
-        // Serialize the modified HTML back to string
-        let serializer = new XMLSerializer();
-        htmlData = serializer.serializeToString(doc);
-
-        return new Response(htmlData, { headers: apiRes.headers });
+        const response = new Response(websiteHtml, websiteRes);
+        return new HTMLRewriter()
+            .on('img', {
+                element(el) {
+                    const src = el.getAttribute('src');
+                    if (src && !src.startsWith('https://chayenu.org')) {
+                        el.setAttribute('src', `https://chayenu.org${src}`);
+                    }
+                }
+            })
+            .transform(response);
     } catch (error) {
-    console.log(error);
-    return new Response(`Error calling API: ${error}`, { status: 500 });
-}
+        console.log(error);
+        return new Response(`Error calling API: ${error}`, { status: 500 });
+    }
 }
