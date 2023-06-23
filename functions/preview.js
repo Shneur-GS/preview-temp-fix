@@ -12,7 +12,7 @@ export async function onRequest(context) {
         return new Response('Missing slug', { status: 400 });
     }
 
-    const websiteUrl = `https://website.chayenu.org/${slug}?includeDraft=true`;
+    const websiteUrl = `https://chayenu.org/${slug}?includeDraft=true`;
     try {
         const websiteRes = await fetch(websiteUrl);
         const websiteHtml = await websiteRes.text();
