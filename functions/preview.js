@@ -38,6 +38,7 @@ export async function onRequest(context) {
 
         return new Response(htmlData, { headers: apiRes.headers });
     } catch (error) {
-        return new Response('Error calling API', { status: 500 });
-    }
+    console.log(error);
+    return new Response(`Error calling API: ${error}`, { status: 500 });
+}
 }
