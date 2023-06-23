@@ -1,12 +1,12 @@
 export async function onRequest(context) {
-    const request = context.request;
+    const request = context.request || {};
   
-    if (request.method !== 'GET') {
+    if ((request.method || 'GET') !== 'GET') {
         return new Response(`Method ${request.method} Not Allowed`, { status: 405 });
     }
   
-    const url = new URL(request.url);
-    const slug = url.searchParams.get('slug');
+    const url = new URL(request.url || '');
+    const slug = url.searchParams.get('slug') || '';
 
     if (!slug) {
         return new Response('Missing slug', { status: 400 });
@@ -15,13 +15,13 @@ export async function onRequest(context) {
     const websiteUrl = `https://chayenu.org/${slug}?includeDraft=true`;
     try {
         const websiteRes = await fetch(websiteUrl);
-        const websiteHtml = await websiteRes.text();
+        const websiteHtml = await websiteRes.text() || '';
 
         const response = new Response(websiteHtml, websiteRes);
         return new HTMLRewriter()
             .on('img', {
                 element(el) {
-                    const src = el.getAttribute('src');
+                    const src = el.getAttribute('src') || '';
                     if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
                         el.setAttribute('src', `https://chayenu.org${src}`);
                     }
@@ -44,12 +44,11 @@ export async function onRequest(context) {
   font-family: circular;
 
   src: url('chrome-extension://liecbddmkiiihnedobmlmillhodjkdmb/fonts/CircularXXWeb-Bold.woff2') format('woff2');
-}</style> ${el.innerHTML}`, { html: true });
+}</style> ${el.innerHTML || ''}`, { html: true });
                 }
             })
             .transform(response);
     } catch (error) {
-        console.log(error);
-        return new Response(`Error calling API: ${error}`, { status: 500 });
+        return new Response(`Error calling API: ${error.toString()}`, { status: 500 });
     }
 }
