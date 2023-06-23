@@ -15,12 +15,19 @@ export async function onRequest(context) {
     const apiUrl = `https://website.chayenu.org/${slugParam}?includeDraft=true`;
 
     try {
-        const apiRes = await fetch(apiUrl);
-        const data = await apiRes.text();
-        
-        return new Response(data, {
-            headers: { 'Content-Type': 'text/html' },
+        const apiResponse = await fetch(apiUrl, {
+            method: request.method,
+            headers: request.headers
         });
+
+        // Copy the response so that it's no longer tied to the original fetch call
+        const response = new Response(apiResponse.body, apiResponse);
+
+        // Alter the headers so that it's as if the response came directly from your domain
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Host', new URL(request.url).host);
+
+        return response;
 
     } catch (error) {
         return new Response('Error calling API', { status: 500 });
