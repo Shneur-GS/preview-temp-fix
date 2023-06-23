@@ -22,7 +22,7 @@ export async function onRequest(context) {
             .on('img', {
                 element(el) {
                     const src = el.getAttribute('src');
-                    if (src && !src.startsWith('https://chayenu.org')) {
+                    if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
                         el.setAttribute('src', `https://chayenu.org${src}`);
                     }
                 }
@@ -33,3 +33,4 @@ export async function onRequest(context) {
         return new Response(`Error calling API: ${error}`, { status: 500 });
     }
 }
+
